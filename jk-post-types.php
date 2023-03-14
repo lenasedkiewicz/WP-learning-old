@@ -7,6 +7,10 @@ function jk_post_types(){
         'public' => true,
         'labels' => array(
             'name' => 'Wydarzenia',
+            'add_new_item' => 'Dodaj wydarzenie',
+            'edit_item' => 'Edytuj wydarzenie',
+            'all_items' => 'Lista wydarzeń',
+            'singular_name' => 'Wydarzenie',
         ),
         'menu_icon' => 'dashicons-calendar',
     ));
