@@ -5,6 +5,7 @@
 function jk_post_types(){
     register_post_type('event', array(
         'public' => true,
+        'show_in_rest' => true,
         'labels' => array(
             'name' => 'Wydarzenia',
             'add_new_item' => 'Dodaj wydarzenie',
