@@ -43,6 +43,22 @@ function jk_post_types(){
         ),
         'menu_icon' => 'dashicons-edit',
     ));
+
+    // Autorzy
+
+    register_post_type('author', array(
+        'supports' => array('title', 'editor', 'excerpt', ),
+        'public' => true,
+        'show_in_rest' => true,
+        'labels' => array(
+            'name' => 'Autorzy',
+            'add_new_item' => 'Dodaj autora',
+            'edit_item' => 'Edytuj autora',
+            'all_items' => 'Lista autorów',
+            'singular_name' => 'Autorzy',
+        ),
+        'menu_icon' => 'dashicons-businessperson',
+    ));
 };
 
 add_action('init', 'jk_post_types');
