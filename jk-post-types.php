@@ -47,7 +47,7 @@ function jk_post_types(){
     // Autorzy
 
     register_post_type('blogauthor', array(
-        'supports' => array('title', 'editor', 'excerpt', ),
+        'supports' => array('title', 'editor', 'excerpt', 'thumbnail'),
         'rewrite' => array(
             'slug' => 'autor',
         ),
