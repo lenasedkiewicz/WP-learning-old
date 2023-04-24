@@ -62,6 +62,24 @@ function jk_post_types(){
         ),
         'menu_icon' => 'dashicons-businessperson',
     ));
+
+    // Psychologiczne Krainy
+    register_post_type('land', array(
+        'supports' => array('title', 'editor', 'excerpt', 'thumbnail'),
+        'rewrite' => array(
+            'slug' => 'krainy',
+        ),
+        'public' => true,
+        'show_in_rest' => true,
+        'labels' => array(
+            'name' => 'Krainy',
+            'add_new_item' => 'Dodaj krainę',
+            'edit_item' => 'Edytuj krainę',
+            'all_items' => 'Lista krain',
+            'singular_name' => 'Krainy',
+        ),
+        'menu_icon' => 'dashicons-admin-site-alt',
+    ));
 };
 
 add_action('init', 'jk_post_types');
