@@ -76,7 +76,7 @@ function jk_post_types(){
             'add_new_item' => 'Dodaj krainę',
             'edit_item' => 'Edytuj krainę',
             'all_items' => 'Lista krain',
-            'singular_name' => 'Krainy',
+            'singular_name' => 'Kraina',
         ),
         'menu_icon' => 'dashicons-admin-site-alt',
     ));
