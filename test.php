@@ -45,6 +45,34 @@ function custom_post_type() {
 }
 add_action('init', 'custom_post_type');
 
+// Register custom taxonomy for associating "Javascript Tags" with other posts/pages
+function register_associated_items_taxonomy() {
+    $labels = array(
+        'name'              => 'Associated Items',
+        'singular_name'     => 'Associated Item',
+        'search_items'      => 'Search Associated Items',
+        'all_items'         => 'All Associated Items',
+        'edit_item'         => 'Edit Associated Item',
+        'update_item'       => 'Update Associated Item',
+        'add_new_item'      => 'Add New Associated Item',
+        'new_item_name'     => 'New Associated Item Name',
+        'menu_name'         => 'Associated Items',
+    );
+
+    $args = array(
+        'hierarchical'      => false,
+        'labels'            => $labels,
+        'show_ui'           => true,
+        'show_admin_column' => true,
+        'query_var'         => true,
+        'rewrite'           => array('slug' => 'associated-items'),
+    );
+
+    register_taxonomy('associated_items', 'javascript_tags', $args);
+}
+add_action('init', 'register_associated_items_taxonomy');
+
+
 // Set up user capabilities
 function add_javascript_tags_caps() {
     $roles = array('administrator', 'editor'); // Add any other custom roles if necessary
@@ -97,8 +125,8 @@ function render_javascript_tags_associate_meta_box($post) {
     wp_nonce_field('save_associated_post', 'associated_post_nonce');
 }
 
-// Save the associated post/page when the Javascript Tag is saved or updated
-function save_javascript_tags_associate_meta_box($post_id) {
+// Save the associated items when the Javascript Tag is saved or updated
+function save_javascript_tags_associated_items($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }
@@ -107,11 +135,35 @@ function save_javascript_tags_associate_meta_box($post_id) {
         return;
     }
 
-    if (isset($_POST['associated_post_id'])) {
-        $associated_post_id = absint($_POST['associated_post_id']);
-        update_post_meta($post_id, 'associated_post_id', $associated_post_id);
+    if (isset($_POST['associated_items'])) {
+        $associated_items = $_POST['associated_items'];
+        wp_set_post_terms($post_id, $associated_items, 'associated_items');
     } else {
-        delete_post_meta($post_id, 'associated_post_id');
+        wp_remove_object_terms($post_id, '', 'associated_items');
     }
 }
-add_action('save_post', 'save_javascript_tags_associate_meta_box');
+add_action('save_post', 'save_javascript_tags_associated_items');
+
+// Output the JavaScript code in the footer for corresponding posts/pages
+function output_associated_javascript_in_footer() {
+    if (!is_singular()) {
+        return;
+    }
+
+    $post = get_post();
+    $associated_items = get_the_terms($post->ID, 'associated_items');
+
+    if (!empty($associated_items)) {
+        foreach ($associated_items as $associated_item) {
+            $associated_post_id = $associated_item->object_id;
+            $javascript_code = get_post_meta($associated_post_id, 'javascript_code', true);
+            if (!empty($javascript_code)) {
+                echo '<script type="text/javascript">';
+                echo $javascript_code;
+                echo '</script>';
+            }
+        }
+    }
+}
+add_action('wp_footer', 'output_associated_javascript_in_footer');
+
