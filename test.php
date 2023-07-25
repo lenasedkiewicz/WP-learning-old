@@ -274,41 +274,45 @@ function output_associated_javascript_in_footer() {
 add_action('wp_footer', 'output_associated_javascript_in_footer');
 
 function display_associated_javascript_in_footer() {
-    if (is_singular('post') || is_singular('page')) {
-        $post_id = get_the_ID();
-        $associated_tags = get_post_meta($post_id, 'associated_post_ids', true);
-        $associated_category = get_post_meta($post_id, 'associated_category', true);
+    global $post;
 
-        // Check if the current post/page is associated with a Javascript Tag
-        if (!empty($associated_tags) || !empty($associated_category)) {
-            $args = array(
-                'post_type' => 'javascript_tags',
-                'posts_per_page' => -1,
-                'post__in' => $associated_tags,
-                'tax_query' => array(
-                    array(
-                        'taxonomy' => 'category',
-                        'field' => 'term_id',
-                        'terms' => $associated_category,
-                    ),
+    if (!is_singular('post') && !is_singular('page')) {
+        return; // Display the JavaScript code only on single posts and pages
+    }
+
+    $post_id = $post->ID;
+    $associated_tags = get_post_meta($post_id, 'associated_post_ids', true);
+    $associated_category = get_post_meta($post_id, 'associated_category', true);
+
+    // Check if the current post/page is associated with a Javascript Tag
+    if (!empty($associated_tags) || !empty($associated_category)) {
+        $args = array(
+            'post_type' => 'javascript_tags',
+            'posts_per_page' => -1,
+            'post__in' => $associated_tags,
+            'tax_query' => array(
+                array(
+                    'taxonomy' => 'category',
+                    'field' => 'term_id',
+                    'terms' => $associated_category,
                 ),
-            );
+            ),
+        );
 
-            $query = new WP_Query($args);
+        $query = new WP_Query($args);
 
-            // Loop through the associated Javascript Tags and display their code in the footer
-            if ($query->have_posts()) {
-                while ($query->have_posts()) {
-                    $query->the_post();
-                    $javascript_code = get_the_content();
-                    if (!empty($javascript_code)) {
-                        echo '<script type="text/javascript">';
-                        echo $javascript_code;
-                        echo '</script>';
-                    }
+        // Loop through the associated Javascript Tags and display their code in the footer
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $javascript_code = get_the_content();
+                if (!empty($javascript_code)) {
+                    echo '<script type="text/javascript">';
+                    echo $javascript_code;
+                    echo '</script>';
                 }
-                wp_reset_postdata();
             }
+            wp_reset_postdata();
         }
     }
 }
