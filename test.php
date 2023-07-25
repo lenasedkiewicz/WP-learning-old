@@ -236,3 +236,43 @@ function render_associations_column_to_javascript_tags($column, $post_id) {
     }
 }
 add_action('manage_javascript_tags_posts_custom_column', 'render_associations_column_to_javascript_tags', 10, 2);
+
+
+// Output the JavaScript code in the footer for corresponding posts/pages
+function output_associated_javascript_in_footer() {
+    if (!is_singular()) {
+        return;
+    }
+
+    $post = get_post();
+    $associated_post_ids = get_post_meta($post->ID, 'associated_post_ids', true);
+
+    if (!empty($associated_post_ids)) {
+        foreach ($associated_post_ids as $associated_post_id) {
+            $associated_post = get_post($associated_post_id);
+            if ($associated_post) {
+                $javascript_code = get_post_meta($associated_post->ID, 'javascript_code', true);
+                if (!empty($javascript_code)) {
+                    echo '<script type="text/javascript">';
+                    echo $javascript_code;
+                    echo '</script>';
+                }
+            }
+        }
+    }
+}
+add_action('wp_footer', 'output_associated_javascript_in_footer');
+
+
+function insert_associated_javascript_into_footer() {
+    if (is_singular('javascript_tags')) {
+        global $post;
+        $javascript_code = $post->post_content;
+        if (!empty($javascript_code)) {
+            echo '<script type="text/javascript">';
+            echo $javascript_code;
+            echo '</script>';
+        }
+    }
+}
+add_action('wp_footer', 'insert_associated_javascript_into_footer');
