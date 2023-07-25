@@ -164,22 +164,32 @@ function save_javascript_tags_associate_meta_box($post_id) {
     // Handle "All Posts" option
     if (isset($_POST['associated_post_ids']) && in_array('all', $_POST['associated_post_ids'])) {
         update_post_meta($post_id, 'associated_post_ids', array('all'));
+        delete_post_meta($post_id, 'javascript_code'); // Remove any previously saved JavaScript code
     } elseif (isset($_POST['associated_post_ids'])) {
         $associated_post_ids = array_map('absint', $_POST['associated_post_ids']);
         update_post_meta($post_id, 'associated_post_ids', $associated_post_ids);
+        delete_post_meta($post_id, 'javascript_code'); // Remove any previously saved JavaScript code
     } else {
         delete_post_meta($post_id, 'associated_post_ids');
+        delete_post_meta($post_id, 'javascript_code'); // Remove any previously saved JavaScript code
     }
 
     // Handle category selection for posts
     if (isset($_POST['associated_category']) && $_POST['post_type'] === 'post') {
         $associated_category = absint($_POST['associated_category']);
         update_post_meta($post_id, 'associated_category', $associated_category);
+        delete_post_meta($post_id, 'javascript_code'); // Remove any previously saved JavaScript code
     } else {
         delete_post_meta($post_id, 'associated_category');
     }
+
+    // Save the JavaScript code associated with the post
+    if (isset($_POST['javascript_code'])) {
+        update_post_meta($post_id, 'javascript_code', sanitize_textarea_field($_POST['javascript_code']));
+    }
 }
 add_action('save_post', 'save_javascript_tags_associate_meta_box');
+
 
 //Add function
 
@@ -263,16 +273,43 @@ function output_associated_javascript_in_footer() {
 }
 add_action('wp_footer', 'output_associated_javascript_in_footer');
 
+function display_associated_javascript_in_footer() {
+    if (is_singular('post') || is_singular('page')) {
+        $post_id = get_the_ID();
+        $associated_tags = get_post_meta($post_id, 'associated_post_ids', true);
+        $associated_category = get_post_meta($post_id, 'associated_category', true);
 
-function insert_associated_javascript_into_footer() {
-    if (is_singular('javascript_tags')) {
-        global $post;
-        $javascript_code = $post->post_content;
-        if (!empty($javascript_code)) {
-            echo '<script type="text/javascript">';
-            echo $javascript_code;
-            echo '</script>';
+        // Check if the current post/page is associated with a Javascript Tag
+        if (!empty($associated_tags) || !empty($associated_category)) {
+            $args = array(
+                'post_type' => 'javascript_tags',
+                'posts_per_page' => -1,
+                'post__in' => $associated_tags,
+                'tax_query' => array(
+                    array(
+                        'taxonomy' => 'category',
+                        'field' => 'term_id',
+                        'terms' => $associated_category,
+                    ),
+                ),
+            );
+
+            $query = new WP_Query($args);
+
+            // Loop through the associated Javascript Tags and display their code in the footer
+            if ($query->have_posts()) {
+                while ($query->have_posts()) {
+                    $query->the_post();
+                    $javascript_code = get_the_content();
+                    if (!empty($javascript_code)) {
+                        echo '<script type="text/javascript">';
+                        echo $javascript_code;
+                        echo '</script>';
+                    }
+                }
+                wp_reset_postdata();
+            }
         }
     }
 }
-add_action('wp_footer', 'insert_associated_javascript_into_footer');
+add_action('wp_footer', 'display_associated_javascript_in_footer');
