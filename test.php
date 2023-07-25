@@ -103,11 +103,12 @@ function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $
         $associated_post_ids = array();
     }
 
-    $options = '<option value="0">Not Associated</option>';
+    $options = '';
 
     if ($show_all_option) {
-        $selected_all = (in_array('all', $associated_post_ids)) ? 'selected' : '';
-        $options .= '<option value="all" ' . $selected_all . '>All ' . esc_html(ucfirst($post_type)) . '</option>';
+        $selected_all = (in_array('all', $associated_post_ids)) ? 'checked' : '';
+        $options .= '<input type="checkbox" name="associated_post_ids[]" id="associated_post_ids_all" value="all" ' . $selected_all . '>';
+        $options .= '<label for="associated_post_ids_all">All ' . esc_html(ucfirst($post_type)) . '</label><br>';
     }
 
     // Get all posts or pages as options for association
@@ -117,15 +118,14 @@ function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $
     ));
 
     foreach ($all_items as $post_item) {
-        $selected = (in_array($post_item->ID, $associated_post_ids)) ? 'selected' : '';
-        $options .= '<option value="' . esc_attr($post_item->ID) . '" ' . $selected . '>' . esc_html($post_item->post_title) . '</option>';
+        $checked = (in_array($post_item->ID, $associated_post_ids)) ? 'checked' : '';
+        $options .= '<input type="checkbox" name="associated_post_ids[]" id="associated_post_id_' . $post_item->ID . '" value="' . esc_attr($post_item->ID) . '" ' . $checked . '>';
+        $options .= '<label for="associated_post_id_' . $post_item->ID . '">' . esc_html($post_item->post_title) . '</label><br>';
     }
 
-    // Display the select dropdown
-    echo '<label for="associated_post_ids">Select ' . esc_html(ucfirst($post_type)) . ' to Associate:</label>';
-    echo '<select name="associated_post_ids[]" id="associated_post_ids" ' . (($allow_multiple) ? 'multiple' : '') . '>';
+    // Display the checkboxes
+    echo '<p>Associate with ' . esc_html(ucfirst($post_type)) . ':</p>';
     echo $options;
-    echo '</select>';
 
     // Add the category selection dropdown for posts
     if ($post_type === 'post' && $allow_category) {
@@ -134,11 +134,11 @@ function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $
 
         $category_options = '<option value="0">Select Category</option>';
         foreach ($categories as $category) {
-            $selected = ($associated_category === $category->term_id) ? 'selected' : '';
+            $selected = ($associated_category == $category->term_id) ? 'selected' : '';
             $category_options .= '<option value="' . esc_attr($category->term_id) . '" ' . $selected . '>' . esc_html($category->name) . '</option>';
         }
 
-        echo '<label for="associated_category">Select Category:</label>';
+        echo '<p>Select Category:</p>';
         echo '<select name="associated_category" id="associated_category">';
         echo $category_options;
         echo '</select>';
@@ -146,6 +146,7 @@ function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $
 
     wp_nonce_field('save_associated_post', 'associated_post_nonce');
 }
+
 
 
 // Save the associated post/page in the "Javascript Tags":
@@ -159,24 +160,80 @@ function save_javascript_tags_associate_meta_box($post_id) {
         return;
     }
 
-    if (isset($_POST['associated_post_ids'])) {
+    // Handle "All Posts" option
+    if (isset($_POST['associated_post_ids']) && in_array('all', $_POST['associated_post_ids'])) {
+        update_post_meta($post_id, 'associated_post_ids', array('all'));
+    } elseif (isset($_POST['associated_post_ids'])) {
         $associated_post_ids = array_map('absint', $_POST['associated_post_ids']);
-
-        // Handle "All Posts" and "All Pages" options
-        if (in_array('all', $associated_post_ids)) {
-            $associated_post_ids = array('all');
-        }
-
         update_post_meta($post_id, 'associated_post_ids', $associated_post_ids);
     } else {
         delete_post_meta($post_id, 'associated_post_ids');
     }
 
-    if (isset($_POST['associated_category']) && $_POST['post_type'] === 'post') {
-        $associated_category = absint($_POST['associated_category']);
-        update_post_meta($post_id, 'associated_category', $associated_category);
-    } else {
-        delete_post_meta($post_id, 'associated_category');
+    // Handle category selection for posts
+    if ($_POST['post_type'] === 'post') {
+        if (isset($_POST['associated_category'])) {
+            $associated_category = absint($_POST['associated_category']);
+            update_post_meta($post_id, 'associated_category', $associated_category);
+        } else {
+            delete_post_meta($post_id, 'associated_category');
+        }
     }
 }
 add_action('save_post', 'save_javascript_tags_associate_meta_box');
+
+//Add function
+
+function get_associated_posts_pages_and_category($post_id) {
+    $associated_post_ids = get_post_meta($post_id, 'associated_post_ids', true);
+    $associated_category = get_post_meta($post_id, 'associated_category', true);
+
+    $associated_posts_pages = array();
+
+    if (is_array($associated_post_ids) && !empty($associated_post_ids)) {
+        if (in_array('all', $associated_post_ids)) {
+            $associated_posts_pages[] = 'All Posts/Pages';
+        } else {
+            foreach ($associated_post_ids as $post_id) {
+                $post = get_post($post_id);
+                if ($post) {
+                    $associated_posts_pages[] = $post->post_title;
+                }
+            }
+        }
+    }
+
+    if ($associated_category) {
+        $category = get_category($associated_category);
+        if ($category) {
+            $associated_posts_pages[] = 'Category: ' . $category->name;
+        }
+    }
+
+    return $associated_posts_pages;
+}
+
+
+
+// Add a custom column to the "Javascript Tags" admin page to display the associations
+
+function add_associations_column_to_javascript_tags($columns) {
+    $columns['associated_items'] = 'Associated Items';
+    return $columns;
+}
+add_filter('manage_javascript_tags_posts_columns', 'add_associations_column_to_javascript_tags');
+
+function render_associations_column_to_javascript_tags($column, $post_id) {
+    if ($column === 'associated_items') {
+        $associated_posts_pages = get_associated_posts_pages_and_category($post_id);
+
+        if (!empty($associated_posts_pages)) {
+            echo '<ul>';
+            foreach ($associated_posts_pages as $item) {
+                echo '<li>' . esc_html($item) . '</li>';
+            }
+            echo '</ul>';
+        }
+    }
+}
+add_action('manage_javascript_tags_posts_custom_column', 'render_associations_column_to_javascript_tags', 10, 2);
