@@ -145,9 +145,10 @@ function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $
     }
 
     wp_nonce_field('save_associated_post', 'associated_post_nonce');
+
+    // Enqueue JavaScript for handling checkboxes and category selection
+    echo '<script src="' . plugin_dir_url(__FILE__) . 'js/associate-script.js"></script>';
 }
-
-
 
 // Save the associated post/page in the "Javascript Tags":
 
@@ -171,13 +172,11 @@ function save_javascript_tags_associate_meta_box($post_id) {
     }
 
     // Handle category selection for posts
-    if ($_POST['post_type'] === 'post') {
-        if (isset($_POST['associated_category'])) {
-            $associated_category = absint($_POST['associated_category']);
-            update_post_meta($post_id, 'associated_category', $associated_category);
-        } else {
-            delete_post_meta($post_id, 'associated_category');
-        }
+    if (isset($_POST['associated_category']) && $_POST['post_type'] === 'post') {
+        $associated_category = absint($_POST['associated_category']);
+        update_post_meta($post_id, 'associated_category', $associated_category);
+    } else {
+        delete_post_meta($post_id, 'associated_category');
     }
 }
 add_action('save_post', 'save_javascript_tags_associate_meta_box');
