@@ -60,3 +60,58 @@ function add_javascript_tags_caps() {
     }
 }
 register_activation_hook(__FILE__, 'add_javascript_tags_caps');
+
+// Add meta box for associating posts/pages with Javascript Tags
+function javascript_tags_associate_meta_box() {
+    add_meta_box(
+        'javascript_tags_associate_meta_box',
+        'Associate with Posts/Pages',
+        'render_javascript_tags_associate_meta_box',
+        'javascript_tags',
+        'side',
+        'default'
+    );
+}
+add_action('add_meta_boxes', 'javascript_tags_associate_meta_box');
+
+function render_javascript_tags_associate_meta_box($post) {
+    $associated_post_id = get_post_meta($post->ID, 'associated_post_id', true);
+    $options = '<option value="0">Not Associated</option>';
+
+    // Get all posts and pages as options for association
+    $all_posts = get_posts(array(
+        'post_type' => array('post', 'page'),
+        'numberposts' => -1,
+    ));
+
+    foreach ($all_posts as $post_item) {
+        $selected = ($associated_post_id == $post_item->ID) ? 'selected' : '';
+        $options .= '<option value="' . esc_attr($post_item->ID) . '" ' . $selected . '>' . esc_html($post_item->post_title) . '</option>';
+    }
+
+    // Display the select dropdown
+    echo '<label for="associated_post_id">Select Post/Page to Associate:</label>';
+    echo '<select name="associated_post_id" id="associated_post_id">';
+    echo $options;
+    echo '</select>';
+    wp_nonce_field('save_associated_post', 'associated_post_nonce');
+}
+
+// Save the associated post/page when the Javascript Tag is saved or updated
+function save_javascript_tags_associate_meta_box($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!isset($_POST['associated_post_nonce']) || !wp_verify_nonce($_POST['associated_post_nonce'], 'save_associated_post')) {
+        return;
+    }
+
+    if (isset($_POST['associated_post_id'])) {
+        $associated_post_id = absint($_POST['associated_post_id']);
+        update_post_meta($post_id, 'associated_post_id', $associated_post_id);
+    } else {
+        delete_post_meta($post_id, 'associated_post_id');
+    }
+}
+add_action('save_post', 'save_javascript_tags_associate_meta_box');
