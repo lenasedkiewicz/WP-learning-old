@@ -89,16 +89,21 @@ add_action('add_meta_boxes', 'javascript_tags_associate_pages_meta_box');
 
 // Render separate meta boxes with the dropdowns for posts and pages
 function render_javascript_tags_associate_posts_meta_box($post) {
-    render_javascript_tags_associate_meta_box($post, 'post');
+    render_javascript_tags_associate_meta_box($post, 'post', true);
 }
 
 function render_javascript_tags_associate_pages_meta_box($post) {
-    render_javascript_tags_associate_meta_box($post, 'page');
+    render_javascript_tags_associate_meta_box($post, 'page', true);
 }
 
-function render_javascript_tags_associate_meta_box($post, $post_type = 'post') {
+function render_javascript_tags_associate_meta_box($post, $post_type = 'post', $show_all_option = false) {
     $associated_post_id = get_post_meta($post->ID, 'associated_post_id', true);
     $options = '<option value="0">Not Associated</option>';
+
+    if ($show_all_option) {
+        $selected_all = ($associated_post_id == 'all') ? 'selected' : '';
+        $options .= '<option value="all" ' . $selected_all . '>All ' . esc_html(ucfirst($post_type)) . '</option>';
+    }
 
     // Get all posts or pages as options for association
     $all_items = get_posts(array(
@@ -131,7 +136,13 @@ function save_javascript_tags_associate_meta_box($post_id) {
     }
 
     if (isset($_POST['associated_post_id'])) {
-        $associated_post_id = absint($_POST['associated_post_id']);
+        $associated_post_id = sanitize_text_field($_POST['associated_post_id']);
+
+        // Handle "All Posts" and "All Pages" options
+        if ($associated_post_id !== 'all') {
+            $associated_post_id = absint($associated_post_id);
+        }
+        
         update_post_meta($post_id, 'associated_post_id', $associated_post_id);
     } else {
         delete_post_meta($post_id, 'associated_post_id');
