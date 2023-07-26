@@ -103,13 +103,13 @@ function display_associated_javascript_tag_content() {
 
         // Get the associated items (tags) of the current post/page
         $associated_items = wp_get_post_terms($post->ID);
-
         if ($associated_items) {
             $associated_items = wp_get_post_terms($post->ID)[0]->name;
         }
         // Check if there are associated items
         // print_r(wp_get_post_terms($post->ID)[0]->name);
         // echo $associated_items;
+        
         if (!empty($associated_items)) {
             $args = array(
                 'tax_query' => array(
@@ -124,23 +124,26 @@ function display_associated_javascript_tag_content() {
             $query = new WP_Query($associated_items);
 
             // Check if there are matching JavaScript Tags
-            // var_dump($query);
             $searchforposts = $query->have_posts();
-            // var_dump($searchforposts);
             $slug= get_the_tags($searchforposts)[0]->slug;
             if ($query->have_posts()) {
                 wp_reset_postdata(); // Reset the query to prevent conflicts
                 // var_dump(get_post_types());
+                $taxonomy = get_terms('my_custom_taxonomy');
+                $term = $taxonomy->name;
+                var_dump($term);
+                $cpt_taxonomy = get_the_terms($post->ID, $term);
                 $jtag = array(
-                    'post_type' => 'javascript_tags',
-                    'post_status' => 'publish',
+                    'tax_query' => array(
+                        array(
+                            'terms' => $cpt_taxonomy,
+                        ),
+                    ),
                 );
-                var_dump(get_terms());
                 $loop = new WP_Query( $jtag );
                 // echo get_posts($searchforposts);
                 //ob_start(); // Start the buffer to capture the output
                 // var_dump($loop);
-
                     while ( $loop->have_posts() ) : $loop->the_post();
 
         the_excerpt(); 
@@ -180,7 +183,7 @@ function register_my_custom_taxonomy() {
         // Replace 'javascript_tags' with the custom post type you want to associate with
         'object_type'       => array('javascript_tags'),
         // Other taxonomy arguments you may want to add
-        // 'rewrite'         => array('slug' => 'my-custom-taxonomy'),
+        // 'rewrite'         => array('slug' => 'js-tags'),
     );
 
     register_taxonomy('my_custom_taxonomy', 'javascript_tags', $args);
