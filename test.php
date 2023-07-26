@@ -134,14 +134,13 @@ function display_associated_javascript_tag_content() {
                     'post_type' => 'javascript_tags',
                     'post_status' => 'publish',
                 );
-                var_dump(get_terms());
+                // var_dump(get_terms());
                 $loop = new WP_Query( $jtag );
                 // echo get_posts($searchforposts);
                 //ob_start(); // Start the buffer to capture the output
                 // var_dump($loop);
-
                     while ( $loop->have_posts() ) : $loop->the_post();
-                    the_excerpt();
+                    your_plugin_inject_script();
                     endwhile;
                     wp_reset_postdata();
 
@@ -184,3 +183,10 @@ function register_my_custom_taxonomy() {
     register_taxonomy('my_custom_taxonomy', 'javascript_tags', $args);
 }
 add_action('init', 'register_my_custom_taxonomy');
+
+function your_plugin_inject_script() {
+    echo '<script type="text/javascript">' . PHP_EOL;
+    echo get_the_content();
+    echo '</script>' . PHP_EOL;
+}
+add_action('wp_footer', 'your_plugin_inject_script');
