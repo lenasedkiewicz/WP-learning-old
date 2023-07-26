@@ -58,7 +58,6 @@ function register_associated_items_taxonomy() {
         'add_new_item'      => 'Add New Associated Item',
         'new_item_name'     => 'New Associated Item Name',
         'menu_name'         => 'Associated Items',
-        ''
     );
 
     $args = array(
@@ -140,7 +139,8 @@ function display_associated_javascript_tag_content() {
                 $loop = new WP_Query( $jtag );
                 // echo get_posts($searchforposts);
                 //ob_start(); // Start the buffer to capture the output
-                var_dump($loop);
+                // var_dump($loop);
+
                     while ( $loop->have_posts() ) : $loop->the_post();
                     
         the_excerpt(); 
@@ -155,3 +155,34 @@ function display_associated_javascript_tag_content() {
 }
 
 add_action('wp', 'display_associated_javascript_tag_content');
+
+
+// Register custom taxonomy for associating with "Javascript Tags" custom post type
+function register_my_custom_taxonomy() {
+    $labels = array(
+        'name'              => 'My Custom Taxonomy',
+        'singular_name'     => 'My Custom Taxonomy',
+        'search_items'      => 'Search My Custom Taxonomy',
+        'all_items'         => 'All My Custom Taxonomy',
+        'edit_item'         => 'Edit My Custom Taxonomy',
+        'update_item'       => 'Update My Custom Taxonomy',
+        'add_new_item'      => 'Add New My Custom Taxonomy',
+        'new_item_name'     => 'New My Custom Taxonomy Name',
+        'menu_name'         => 'My Custom Taxonomy',
+    );
+
+    $args = array(
+        'hierarchical'      => true, // Set this to false for non-hierarchical (tags-like) taxonomy
+        'labels'            => $labels,
+        'show_ui'           => true,
+        'show_admin_column' => true,
+        'query_var'         => true,
+        // Replace 'javascript_tags' with the custom post type you want to associate with
+        'object_type'       => array('javascript_tags'),
+        // Other taxonomy arguments you may want to add
+        // 'rewrite'         => array('slug' => 'my-custom-taxonomy'),
+    );
+
+    register_taxonomy('my_custom_taxonomy', 'javascript_tags', $args);
+}
+add_action('init', 'register_my_custom_taxonomy');
