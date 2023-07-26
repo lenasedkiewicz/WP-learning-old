@@ -91,7 +91,6 @@ function add_javascript_tags_caps() {
 register_activation_hook(__FILE__, 'add_javascript_tags_caps');
 
 // Function to check if the current post and JavaScript Tag have the same tag
-// Function to check if the current post and JavaScript Tag have the same tag
 function display_associated_javascript_tag_content() {
     // Check if we are on a single post/page and if the queried object is valid
     if (is_singular() && is_main_query() && function_exists('get_queried_object')) {
@@ -109,7 +108,7 @@ function display_associated_javascript_tag_content() {
         // Check if there are associated items
         // print_r(wp_get_post_terms($post->ID)[0]->name);
         // echo $associated_items;
-        
+
         if (!empty($associated_items)) {
             $args = array(
                 'tax_query' => array(
@@ -130,25 +129,21 @@ function display_associated_javascript_tag_content() {
                 wp_reset_postdata(); // Reset the query to prevent conflicts
                 // var_dump(get_post_types());
                 $taxonomy = get_terms('my_custom_taxonomy');
-                $term = $taxonomy->name;
-                var_dump($term);
-                $cpt_taxonomy = get_the_terms($post->ID, $term);
+                $term = $taxonomy[0]->name;
                 $jtag = array(
-                    'tax_query' => array(
-                        array(
-                            'terms' => $cpt_taxonomy,
-                        ),
-                    ),
+                    'post_type' => 'javascript_tags',
+                    'post_status' => 'publish',
                 );
+                var_dump(get_terms());
                 $loop = new WP_Query( $jtag );
                 // echo get_posts($searchforposts);
                 //ob_start(); // Start the buffer to capture the output
                 // var_dump($loop);
-                    while ( $loop->have_posts() ) : $loop->the_post();
 
-        the_excerpt(); 
-    endwhile;
-                    wp_reset_postdata(); 
+                    while ( $loop->have_posts() ) : $loop->the_post();
+                    the_excerpt();
+                    endwhile;
+                    wp_reset_postdata();
 
                 //return ob_get_clean(); // Return the captured content from the buffer
             }
