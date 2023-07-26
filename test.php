@@ -23,6 +23,7 @@ function custom_post_type() {
         'parent_item_colon'  => 'Parent Javascript Tags:',
         'not_found'          => 'No Javascript tags found.',
         'not_found_in_trash' => 'No Javascript tags found in Trash.',
+        'post_type' => 'javascript_tags',
     );
 
     $args = array(
@@ -57,6 +58,7 @@ function register_associated_items_taxonomy() {
         'add_new_item'      => 'Add New Associated Item',
         'new_item_name'     => 'New Associated Item Name',
         'menu_name'         => 'Associated Items',
+        ''
     );
 
     $args = array(
@@ -89,94 +91,67 @@ function add_javascript_tags_caps() {
 }
 register_activation_hook(__FILE__, 'add_javascript_tags_caps');
 
-// Add meta box for associating posts/pages with Javascript Tags
-function javascript_tags_associate_meta_box() {
-    add_meta_box(
-        'javascript_tags_associate_meta_box',
-        'Associate with Posts/Pages',
-        'render_javascript_tags_associate_meta_box',
-        'javascript_tags',
-        'side',
-        'default'
-    );
-}
-add_action('add_meta_boxes', 'javascript_tags_associate_meta_box');
+// Function to check if the current post and JavaScript Tag have the same tag
+// Function to check if the current post and JavaScript Tag have the same tag
+function display_associated_javascript_tag_content() {
+    // Check if we are on a single post/page and if the queried object is valid
+    if (is_singular() && is_main_query() && function_exists('get_queried_object')) {
+        $queried_object = get_queried_object();
 
-function render_javascript_tags_associate_meta_box($post) {
-    $associated_post_id = get_post_meta($post->ID, 'associated_post_id', true);
-    $options = '<option value="0">Not Associated</option>';
+        if ($queried_object instanceof WP_Post) {
+            $post = $queried_object;
 
-    // Get all posts and pages as options for association
-    $all_posts = get_posts(array(
-        'post_type' => array('post', 'page'),
-        'numberposts' => -1,
-    ));
 
-    foreach ($all_posts as $post_item) {
-        $selected = ($associated_post_id == $post_item->ID) ? 'selected' : '';
-        $options .= '<option value="' . esc_attr($post_item->ID) . '" ' . $selected . '>' . esc_html($post_item->post_title) . '</option>';
-    }
+        // Get the associated items (tags) of the current post/page
+        $associated_items = wp_get_post_terms($post->ID);
 
-    // Display the select dropdown
-    echo '<label for="associated_post_id">Select Post/Page to Associate:</label>';
-    echo '<select name="associated_post_id" id="associated_post_id">';
-    echo $options;
-    echo '</select>';
-    wp_nonce_field('save_associated_post', 'associated_post_nonce');
-}
+        if ($associated_items) {
+            $associated_items = wp_get_post_terms($post->ID)[0]->name;
+        }
+        // Check if there are associated items
+        // print_r(wp_get_post_terms($post->ID)[0]->name);
+        // echo $associated_items;
+        if (!empty($associated_items)) {
+            $args = array(
+                'tax_query' => array(
+                    array(
+                        'terms' => $associated_items,
+                    ),
+                ),
+            );
+            // echo $args['tax_query'][0]['terms'];
 
-// Save the associated items when the Javascript Tag is saved or updated
-function save_javascript_tags_associated_items($post_id) {
-    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-        return;
-    }
+            // Query the JavaScript Tag custom post type with the associated items
+            $query = new WP_Query($associated_items);
 
-    if (!isset($_POST['associated_post_nonce']) || !wp_verify_nonce($_POST['associated_post_nonce'], 'save_associated_post')) {
-        return;
-    }
+            // Check if there are matching JavaScript Tags
+            // var_dump($query);
+            $searchforposts = $query->have_posts();
+            // var_dump($searchforposts);
+            $slug= get_the_tags($searchforposts)[0]->slug;
+            if ($query->have_posts()) {
+                wp_reset_postdata(); // Reset the query to prevent conflicts
+                // var_dump(get_post_types());
+                $jtag = array(
+                    'post_type' => 'javascript_tags',
+                    'post_status' => 'publish',
+                );
 
-    if (isset($_POST['associated_items'])) {
-        $associated_items = $_POST['associated_items'];
-        wp_set_post_terms($post_id, $associated_items, 'associated_items');
-    } else {
-        wp_remove_object_terms($post_id, '', 'associated_items');
-    }
-}
-add_action('save_post', 'save_javascript_tags_associated_items');
+                $loop = new WP_Query( $jtag );
+                // echo get_posts($searchforposts);
+                //ob_start(); // Start the buffer to capture the output
+                var_dump($loop);
+                    while ( $loop->have_posts() ) : $loop->the_post();
+                    
+        the_excerpt(); 
+    endwhile;
+                    wp_reset_postdata(); 
 
-// Output the JavaScript code in the footer for corresponding posts/pages
-// Output the JavaScript code in the footer for corresponding posts/pages
-function output_associated_javascript_in_footer() {
-    if (!is_singular()) {
-        return;
-    }
-
-    $post = get_post();
-    $associated_items = get_the_terms($post->ID, 'associated_items');
-
-    // Debug: Check if associated items are retrieved correctly
-    if ($associated_items) {
-        echo '<pre>';
-        print_r($associated_items);
-        echo '</pre>';
-    }
-
-    if (!empty($associated_items)) {
-        foreach ($associated_items as $associated_item) {
-            $associated_post_id = $associated_item->object_id;
-            $javascript_code = get_post_meta($associated_post_id, 'javascript_code', true);
-
-            // Debug: Check if JavaScript code is retrieved correctly
-            if (!empty($javascript_code)) {
-                echo '<pre>';
-                echo 'Post ID: ' . $associated_post_id;
-                echo '</pre>';
-                echo '<script type="text/javascript">';
-                echo $javascript_code;
-                echo '</script>';
+                //return ob_get_clean(); // Return the captured content from the buffer
             }
         }
     }
 }
-add_action('wp_footer', 'output_associated_javascript_in_footer');
+}
 
+add_action('wp', 'display_associated_javascript_tag_content');
