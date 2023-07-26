@@ -145,6 +145,7 @@ function save_javascript_tags_associated_items($post_id) {
 add_action('save_post', 'save_javascript_tags_associated_items');
 
 // Output the JavaScript code in the footer for corresponding posts/pages
+// Output the JavaScript code in the footer for corresponding posts/pages
 function output_associated_javascript_in_footer() {
     if (!is_singular()) {
         return;
@@ -153,11 +154,23 @@ function output_associated_javascript_in_footer() {
     $post = get_post();
     $associated_items = get_the_terms($post->ID, 'associated_items');
 
+    // Debug: Check if associated items are retrieved correctly
+    if ($associated_items) {
+        echo '<pre>';
+        print_r($associated_items);
+        echo '</pre>';
+    }
+
     if (!empty($associated_items)) {
         foreach ($associated_items as $associated_item) {
             $associated_post_id = $associated_item->object_id;
             $javascript_code = get_post_meta($associated_post_id, 'javascript_code', true);
+
+            // Debug: Check if JavaScript code is retrieved correctly
             if (!empty($javascript_code)) {
+                echo '<pre>';
+                echo 'Post ID: ' . $associated_post_id;
+                echo '</pre>';
                 echo '<script type="text/javascript">';
                 echo $javascript_code;
                 echo '</script>';
