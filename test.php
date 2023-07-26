@@ -140,7 +140,7 @@ function display_associated_javascript_tag_content() {
                 //ob_start(); // Start the buffer to capture the output
                 // var_dump($loop);
                     while ( $loop->have_posts() ) : $loop->the_post();
-                    your_plugin_inject_script();
+                    inject_script_msedkiewicz();
                     endwhile;
                     wp_reset_postdata();
 
@@ -184,9 +184,9 @@ function register_my_custom_taxonomy() {
 }
 add_action('init', 'register_my_custom_taxonomy');
 
-function your_plugin_inject_script() {
+function inject_script_msedkiewicz() {
     echo '<script type="text/javascript">' . PHP_EOL;
     echo get_the_content();
     echo '</script>' . PHP_EOL;
 }
-add_action('wp_footer', 'your_plugin_inject_script');
+add_action('wp_footer', 'inject_script_msedkiewicz');
