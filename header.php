@@ -1,3 +1,14 @@
+<?php
+
+/**
+ * The main template header
+ *
+ * This is the template that display all of the <head> section.
+ *
+ * @package FancyLab Woocommerce Course
+*/
+?>
+
 <!DOCTYPE html>
 <html <?php language_attributes();?>>
 <head>
