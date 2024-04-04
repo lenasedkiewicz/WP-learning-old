@@ -1,3 +1,6 @@
+<?php
+get_header();
+?>
     <div class="content-area">
       <main>
         <section class="slider">Slider</section>
@@ -7,3 +10,7 @@
         <section class="lab-blog">News</section>
       </main>
     </div>
+
+<?php
+get_footer();
+?>
